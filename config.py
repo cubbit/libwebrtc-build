@@ -1,6 +1,8 @@
 import os
 
 PATH_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+DIR_DIST = 'dist'
 DIR_BUILD = 'build'
 DIR_DEPOT_TOOLS = DIR_BUILD + os.path.sep + 'depot_tools'
 DIR_WEBRTC = DIR_BUILD + os.path.sep + 'webrtc'
@@ -13,9 +15,48 @@ PATH_BORINGSSL = os.path.join(PATH_ROOT, DIR_BORINGSSL)
 WEBRTC_REVISION = '4147'
 WEBRTC_BRANCH = "refs/remotes/branch-heads/{}".format(WEBRTC_REVISION)
 
+API_HEADERS = [
+    'api',
+    'rtc_base',
+    'third_party/abseil-cpp/absl',
+]
+
+LEGACY_HEADERS = [
+    '.',
+    'call',
+    'common_audio/include',
+    'common_video/generic_frame_descriptor',
+    'common_video/include',
+    'logging/rtc_event_log',
+    'logging/rtc_event_log/events',
+    'media/base',
+    'media/engine',
+    'modules/audio_coding/include',
+    'modules/audio_device/include',
+    'modules/audio_processing/include',
+    'modules/bitrate_controller/include',
+    'modules/congestion_controller/include',
+    'modules/include',
+    'modules/remote_bitrate_estimator/include',
+    'modules/rtp_rtcp/include',
+    'modules/rtp_rtcp/source',
+    'modules/rtp_rtcp/source/rtcp_packet',
+    'modules/utility/include',
+    'modules/video_coding',
+    'modules/video_coding/codecs/h264/include',
+    'modules/video_coding/codecs/interface',
+    'modules/video_coding/codecs/vp8/include',
+    'modules/video_coding/codecs/vp9/include',
+    'modules/video_coding/include',
+    'p2p/base',
+    'pc',
+    'system_wrappers/include',
+]
+
 cubbit_default = {}
 cubbit_default["gn_args"] = [
     'is_component_build=false',
+    'rtc_build_examples=false',
     'rtc_build_opus=false',
     'rtc_enable_protobuf=false',
     'rtc_include_builtin_audio_codecs=false',
@@ -28,4 +69,11 @@ cubbit_default["gn_args"] = [
     'rtc_use_gtk=false',
     'rtc_use_x11=false',
     'use_custom_libcxx=false',
+
+    'rtc_include_tests=false',
+    'rtc_disable_metrics=false',
+    'rtc_build_tools=false',
+    'rtc_exclude_transient_suppressor=true',
+    'rtc_disable_logging=true',
+    'rtc_disable_trace_events=true',
 ]

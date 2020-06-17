@@ -1,5 +1,7 @@
 import argparse
+import glob
 import os
+import shutil
 
 import config
 import util
@@ -60,11 +62,13 @@ def setup(conf):
         util.exec('git', 'checkout', '-f', conf['boringssl'])
 
         if os.path.exists(util.getpath(config.PATH_BORINGSSL, 'src', 'include')):
-            conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL, 'src', 'include')
+            conf['boringssl_path'] = util.getpath(
+                config.PATH_BORINGSSL, 'src', 'include')
         elif os.path.exists(util.getpath(config.PATH_BORINGSSL, 'src')):
             conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL, 'src')
         else:
             conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL)
+
 
 def pull(conf):
     webrtc_path = util.getpath(config.PATH_WEBRTC)
@@ -109,6 +113,8 @@ def _generate_args(conf):
 
     if conf['debug']:
         args.append('is_debug=true')
+        args.append('enable_iterator_debugging=true')
+        args.append('use_debug_fission=false')
     else:
         args.append('is_debug=false')
 
@@ -122,6 +128,9 @@ def _generate_args(conf):
         args.append('rtc_ssl_root="{}"'.format(conf['boringssl_path']))
     else:
         args.append('rtc_build_ssl=true')
+
+    if conf['os'] == 'win':
+        args.append('is_clang=false')
 
     return args
 
@@ -142,7 +151,8 @@ def _generate_name(conf):
         name = separator.join([name, 'rtti'])
 
     if conf['boringssl']:
-        name = separator.join([name, 'boringssl_{}'.format(conf['boringssl'][:8])])
+        name = separator.join(
+            [name, 'boringssl_{}'.format(conf['boringssl'][:8])])
 
     if conf['no_log']:
         name = separator.join([name, 'nolog'])
@@ -169,16 +179,55 @@ def build(conf):
     args_file = os.path.join(
         webrtc_src_path, out_path, 'args.gn')
 
-    util.exec('gn', 'gen', out_path)
+    os.makedirs(util.getpath(webrtc_src_path, out_path), exist_ok=True)
 
     with open(args_file, 'w') as file:
         file.write('\n'.join(args))
 
     util.exec('gn', 'gen', out_path)
 
-    # for build_target in conf['build_targets']:
-    # util.exec('ninja', '-C', out_path, build_target)
-    util.exec('ninja', '-C', out_path, 'webrtc')
+    util.exec('ninja', '-C', out_path)
+
+
+def _copy_tree(source_root, source_file, destination):
+    file = source_file.replace(source_root, destination)
+
+    os.makedirs(os.path.dirname(file), exist_ok=True)
+    shutil.copy(source_file, file)
+
+
+def archive(conf):
+    webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
+    dist_path = util.getpath(config.DIR_DIST)
+
+    shutil.rmtree(dist_path, ignore_errors=True)
+
+    name = _generate_name(conf)
+    out_path = 'out/{}'.format(name)
+
+    include_path = os.path.join(dist_path, 'include', 'webrtc')
+    lib_path = os.path.join(dist_path, 'lib')
+
+    os.makedirs(include_path)
+    os.makedirs(lib_path)
+
+    for directory in config.API_HEADERS:
+        for file_path in glob.iglob(os.path.join(webrtc_src_path, directory, '**', '*.h'), recursive=True):
+            _copy_tree(webrtc_src_path, file_path, include_path)
+
+    for directory in config.LEGACY_HEADERS:
+        for file_path in glob.iglob(os.path.join(webrtc_src_path, directory, '*.h'), recursive=False):
+            _copy_tree(webrtc_src_path, file_path, include_path)
+
+    for file_path in glob.iglob(os.path.join(webrtc_src_path, out_path, 'obj', '*.lib')):
+        shutil.copy(file_path, lib_path)
+
+    for file_path in glob.iglob(os.path.join(webrtc_src_path, out_path, 'obj', '*.a')):
+        shutil.copy(file_path, lib_path)
+
+    format = 'zip'
+    shutil.make_archive(name, format, dist_path)
+    shutil.move('{}.{}'.format(name, format), dist_path)
 
 
 if __name__ == '__main__':
@@ -186,6 +235,7 @@ if __name__ == '__main__':
     conf = parse_conf(args)
 
     setup(conf)
-    # pull(conf)
-    # patch(conf)
+    pull(conf)
+    patch(conf)
     build(conf)
+    archive(conf)

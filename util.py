@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 import config
 
@@ -26,7 +27,7 @@ def emptydir(*path):
 
 def exec(*cmds):
     print('exec : ' + ' '.join(cmds))
-    subprocess.check_call(cmds, shell=True)
+    subprocess.check_call(cmds, shell=(sys.platform == 'win32'))
 
 
 def exec_stdout(*cmds):

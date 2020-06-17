@@ -2,6 +2,7 @@ import argparse
 import glob
 import os
 import shutil
+import sys
 
 import config
 import util
@@ -35,6 +36,7 @@ def parse_conf(args):
 
 
 def setup(conf):
+    util.cd(config.DIR_BUILD)
     if os.path.exists(util.getpath(config.PATH_DEPOT_TOOLS)):
         util.cd(config.PATH_DEPOT_TOOLS)
         util.exec('git', 'checkout', '-f', 'master')
@@ -46,7 +48,7 @@ def setup(conf):
     os.environ['PATH'] = util.getpath(
         config.PATH_DEPOT_TOOLS) + os.path.pathsep + os.environ['PATH']
 
-    if(os.name == 'nt'):
+    if sys.platform == 'win32':
         os.environ['DEPOT_TOOLS_WIN_TOOLCHAIN'] = '0'
 
     if conf['boringssl']:
@@ -168,6 +170,9 @@ def _generate_name(conf):
 def build(conf):
     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
     util.cd(webrtc_src_path)
+
+    if sys.platform == 'linux':
+        util.exec('bash', 'build/install_build_deps.sh', '--no-prompt')
 
     name = _generate_name(conf)
     args = _generate_args(conf)

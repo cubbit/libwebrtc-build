@@ -12,8 +12,8 @@ PATH_DEPOT_TOOLS = os.path.join(PATH_ROOT, DIR_DEPOT_TOOLS)
 PATH_WEBRTC = os.path.join(PATH_ROOT, DIR_WEBRTC)
 PATH_BORINGSSL = os.path.join(PATH_ROOT, DIR_BORINGSSL)
 
-WEBRTC_REVISION = '4147'
-WEBRTC_BRANCH = "refs/remotes/branch-heads/{}".format(WEBRTC_REVISION)
+# https://chromiumdash.appspot.com/branches
+WEBRTC_BRANCH_PREFIX = "refs/remotes/branch-heads/"
 
 API_HEADERS = [
     'api',
@@ -73,7 +73,6 @@ cubbit_default["gn_args"] = [
     'rtc_include_tests=false',
     'rtc_disable_metrics=false',
     'rtc_build_tools=false',
-    'rtc_exclude_transient_suppressor=true',
-    'rtc_disable_logging=true',
+    # 'rtc_exclude_transient_suppressor=true',
     'rtc_disable_trace_events=true',
 ]

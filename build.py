@@ -11,6 +11,7 @@ import util
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--boringssl', type=str, action='store')
+    parser.add_argument('--branch', type=str, action='store', required=True)
     parser.add_argument('--cpu', type=str, action='store', required=True)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--no-cubbit', action='store_true')
@@ -25,6 +26,7 @@ def parse_conf(args):
     conf = {}
 
     conf['boringssl'] = str(args.boringssl)
+    conf['branch'] = str(args.branch)
     conf['cpu'] = str(args.cpu)
     conf['cubbit'] = not bool(args.no_cubbit)
     conf['debug'] = bool(args.debug)
@@ -83,25 +85,25 @@ def pull(conf):
 
     util.exec('git', 'reset', '--hard')
     util.exec('git', 'fetch', 'origin')
-    util.exec('git', 'checkout', config.WEBRTC_BRANCH)
+    util.exec('git', 'checkout', "{}{}".format(config.WEBRTC_BRANCH_PREFIX, conf["branch"]))
 
     util.exec('gclient', 'sync', '-D')
 
 
-def patch(conf):
-    webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
+# def patch(conf):
+#     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
 
-    if conf['no_log']:
-        log_file = os.path.join(
-            webrtc_src_path, 'rtc_base{}logging.cc'.format(os.path.sep))
-        with open(log_file, 'r') as file:
-            filedata = file.read()
-        filedata = filedata.replace(
-            'LoggingSeverity g_min_sev = LS_INFO', 'LoggingSeverity g_min_sev = LS_NONE')
-        filedata = filedata.replace(
-            'LoggingSeverity g_dbg_sev = LS_INFO', 'LoggingSeverity g_dbg_sev = LS_NONE')
-        with open(log_file, 'w') as file:
-            file.write(filedata)
+#     if conf['no_log']:
+#         log_file = os.path.join(
+#             webrtc_src_path, 'rtc_base{}logging.cc'.format(os.path.sep))
+#         with open(log_file, 'r') as file:
+#             filedata = file.read()
+#         filedata = filedata.replace(
+#             'LoggingSeverity g_min_sev = LS_INFO', 'LoggingSeverity g_min_sev = LS_NONE')
+#         filedata = filedata.replace(
+#             'LoggingSeverity g_dbg_sev = LS_INFO', 'LoggingSeverity g_dbg_sev = LS_NONE')
+#         with open(log_file, 'w') as file:
+#             file.write(filedata)
 
 
 def _generate_args(conf):
@@ -118,7 +120,10 @@ def _generate_args(conf):
         args.append('enable_iterator_debugging=true')
         args.append('use_debug_fission=false')
     else:
-        args.append('is_debug=false')
+        args.append('is_official_build=true')
+
+    if conf['no_log']:
+        args.append('rtc_disable_logging=true')
 
     if conf['rtti']:
         args.append('use_rtti=true')
@@ -134,6 +139,8 @@ def _generate_args(conf):
     if conf['os'] == 'win':
         args.append('is_clang=false')
 
+    args.append('use_custom_libcxx=false')
+
     return args
 
 
@@ -141,7 +148,7 @@ def _generate_name(conf):
     separator = '-'
     name = 'webrtc'
 
-    name = separator.join([name, config.WEBRTC_REVISION])
+    name = separator.join([name, conf["branch"]])
 
     name = separator.join([name, conf['os']])
     name = separator.join([name, conf['cpu']])
@@ -205,13 +212,14 @@ def archive(conf):
     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
     dist_path = util.getpath(config.DIR_DIST)
 
-    shutil.rmtree(dist_path, ignore_errors=True)
-
     name = _generate_name(conf)
     out_path = 'out/{}'.format(name)
 
     include_path = os.path.join(dist_path, 'include', 'webrtc')
     lib_path = os.path.join(dist_path, 'lib')
+
+    shutil.rmtree(include_path, ignore_errors=True)
+    shutil.rmtree(lib_path, ignore_errors=True)
 
     os.makedirs(include_path)
     os.makedirs(lib_path)
@@ -232,7 +240,8 @@ def archive(conf):
 
     format = 'zip'
     shutil.make_archive(name, format, dist_path)
-    shutil.move('{}.{}'.format(name, format), dist_path)
+    # shutil.copy('{}.{}'.format(name, format), dist_path)
+    # os.remove('{}.{}'.format(name, format))
 
 
 if __name__ == '__main__':
@@ -241,6 +250,6 @@ if __name__ == '__main__':
 
     setup(conf)
     pull(conf)
-    patch(conf)
+    # patch(conf)
     build(conf)
     archive(conf)

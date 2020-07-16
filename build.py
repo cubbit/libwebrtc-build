@@ -25,13 +25,13 @@ def parse_args():
 def parse_conf(args):
     conf = {}
 
-    conf['boringssl'] = str(args.boringssl)
-    conf['branch'] = str(args.branch)
-    conf['cpu'] = str(args.cpu)
+    conf['boringssl'] = args.boringssl
+    conf['branch'] = args.branch
+    conf['cpu'] = args.cpu
     conf['cubbit'] = not bool(args.no_cubbit)
     conf['debug'] = bool(args.debug)
     conf['no_log'] = bool(args.no_log)
-    conf['os'] = str(args.os)
+    conf['os'] = args.os
     conf['rtti'] = bool(args.rtti)
 
     return conf
@@ -179,7 +179,7 @@ def build(conf):
     util.cd(webrtc_src_path)
 
     if sys.platform == 'linux':
-        util.exec('bash', 'build/install_build_deps.sh', '--no-prompt')
+        util.exec('bash', 'build/install-build-deps.sh', '--no-prompt')
 
     name = _generate_name(conf)
     args = _generate_args(conf)
@@ -209,6 +209,8 @@ def _copy_tree(source_root, source_file, destination):
 
 
 def archive(conf):
+    util.cd(config.PATH_ROOT)
+
     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
     dist_path = util.getpath(config.DIR_DIST)
 

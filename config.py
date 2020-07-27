@@ -53,6 +53,10 @@ LEGACY_HEADERS = [
     'system_wrappers/include',
 ]
 
+SSL_HEADERS = [
+    'third_party/boringssl/src/include',
+]
+
 cubbit_default = {}
 cubbit_default["gn_args"] = [
     'is_component_build=false',

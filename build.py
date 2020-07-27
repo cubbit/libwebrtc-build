@@ -1,8 +1,10 @@
 import argparse
 import glob
+import json
 import os
 import shutil
 import sys
+import urllib.request
 
 import config
 import util
@@ -10,29 +12,69 @@ import util
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--boringssl', type=str, action='store')
-    parser.add_argument('--branch', type=str, action='store', required=True)
+
+    revision = parser.add_mutually_exclusive_group(required=True)
+    revision.add_argument('--last', action='store_true')
+    revision.add_argument('--branch', type=str, action='store')
+
     parser.add_argument('--cpu', type=str, action='store', required=True)
-    parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--os', type=str, action='store', required=True)
+
+    ssl = parser.add_mutually_exclusive_group()
+    ssl.add_argument('--boringssl', type=str, action='store')
+    ssl.add_argument('--build-boringssl', action='store_true')
+
     parser.add_argument('--no-cubbit', action='store_true')
     parser.add_argument('--no-log', action='store_true')
-    parser.add_argument('--os', type=str, action='store', required=True)
     parser.add_argument('--rtti', action='store_true')
 
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--debug-only', action='store_true')
+    mode.add_argument('--release-only', action='store_true')
+
+    parser.add_argument('--no-archive', action='store_true')
+    parser.add_argument('--specific-out-dir', action='store_true')
+
     return parser.parse_args()
+
+
+def fetch_last(args, conf):
+    chromium_releases = json.loads(urllib.request.urlopen(
+        'https://chromiumdash.appspot.com/fetch_milestones').read())
+    conf['branch'] = chromium_releases[0]['webrtc_branch']
+
+    if not args.build_boringssl:
+        conf['boringssl'] = 'master-with-bazel'
+
+    return conf
 
 
 def parse_conf(args):
     conf = {}
 
-    conf['boringssl'] = args.boringssl
-    conf['branch'] = args.branch
     conf['cpu'] = args.cpu
-    conf['cubbit'] = not bool(args.no_cubbit)
-    conf['debug'] = bool(args.debug)
-    conf['no_log'] = bool(args.no_log)
     conf['os'] = args.os
+
+    conf['boringssl'] = args.boringssl
+
+    conf['cubbit'] = not bool(args.no_cubbit)
+    conf['no_log'] = bool(args.no_log)
     conf['rtti'] = bool(args.rtti)
+
+    if args.debug_only:
+        conf['mode'] = ['debug']
+    elif args.release_only:
+        conf['mode'] = ['release']
+    else:
+        conf['mode'] = ['debug', 'release']
+
+    conf['no_archive'] = bool(args.no_archive)
+    conf['specific_out_dir'] = bool(args.specific_out_dir)
+
+    if args.last:
+        conf = fetch_last(args, conf)
+    else:
+        conf['branch'] = args.branch
 
     return conf
 
@@ -85,7 +127,8 @@ def pull(conf):
 
     util.exec('git', 'reset', '--hard')
     util.exec('git', 'fetch', 'origin')
-    util.exec('git', 'checkout', "{}{}".format(config.WEBRTC_BRANCH_PREFIX, conf["branch"]))
+    util.exec('git', 'checkout', "{}{}".format(
+        config.WEBRTC_BRANCH_PREFIX, conf["branch"]))
 
     util.exec('gclient', 'sync', '-D')
 
@@ -106,7 +149,7 @@ def pull(conf):
 #             file.write(filedata)
 
 
-def _generate_args(conf):
+def _generate_args(conf, mode):
     args = []
 
     args.append('target_os="{}"'.format(conf['os']))
@@ -115,12 +158,12 @@ def _generate_args(conf):
     if conf['cubbit']:
         args = args + config.cubbit_default['gn_args']
 
-    if conf['debug']:
+    if mode is 'debug':
         args.append('is_debug=true')
         args.append('enable_iterator_debugging=true')
         args.append('use_debug_fission=false')
     else:
-        args.append('is_official_build=true')
+        args.append('is_debug=false')
 
     if conf['no_log']:
         args.append('rtc_disable_logging=true')
@@ -144,7 +187,7 @@ def _generate_args(conf):
     return args
 
 
-def _generate_name(conf):
+def _generate_name(conf, mode=None):
     separator = '-'
     name = 'webrtc'
 
@@ -166,27 +209,33 @@ def _generate_name(conf):
     if conf['no_log']:
         name = separator.join([name, 'nolog'])
 
-    if conf['debug']:
-        name = separator.join([name, 'debug'])
-    else:
-        name = separator.join([name, 'release'])
+    if mode:
+        if mode is 'debug':
+            name = separator.join([name, 'debug'])
+        else:
+            name = separator.join([name, 'release'])
 
     return name
 
 
-def build(conf):
+def _generate_out(conf, mode):
+    if(conf['specific_out_dir']):
+        name = _generate_name(conf, mode)
+    else:
+        name = 'default'
+
+    return 'out/{}'.format(name)
+
+
+def build(conf, mode):
     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
     util.cd(webrtc_src_path)
 
     if sys.platform == 'linux':
         util.exec('bash', 'build/install-build-deps.sh', '--no-prompt')
 
-    name = _generate_name(conf)
-    args = _generate_args(conf)
-
-    print(name)
-
-    out_path = 'out/{}'.format(name)
+    args = _generate_args(conf, mode)
+    out_path = _generate_out(conf, mode)
 
     args_file = os.path.join(
         webrtc_src_path, out_path, 'args.gn')
@@ -208,23 +257,20 @@ def _copy_tree(source_root, source_file, destination):
     shutil.copy(source_file, file)
 
 
-def archive(conf):
+def dist_headers(conf, clean=True):
     util.cd(config.PATH_ROOT)
 
     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
     dist_path = util.getpath(config.DIR_DIST)
 
     name = _generate_name(conf)
-    out_path = 'out/{}'.format(name)
 
     include_path = os.path.join(dist_path, 'include', 'webrtc')
-    lib_path = os.path.join(dist_path, 'lib')
 
-    shutil.rmtree(include_path, ignore_errors=True)
-    shutil.rmtree(lib_path, ignore_errors=True)
+    if clean:
+        shutil.rmtree(include_path, ignore_errors=True)
 
-    os.makedirs(include_path)
-    os.makedirs(lib_path)
+    os.makedirs(include_path, exist_ok=True)
 
     for directory in config.API_HEADERS:
         for file_path in glob.iglob(os.path.join(webrtc_src_path, directory, '**', '*.h'), recursive=True):
@@ -234,11 +280,40 @@ def archive(conf):
         for file_path in glob.iglob(os.path.join(webrtc_src_path, directory, '*.h'), recursive=False):
             _copy_tree(webrtc_src_path, file_path, include_path)
 
+    if not conf['boringssl']:
+        for directory in config.SSL_HEADERS:
+            for file_path in glob.iglob(os.path.join(webrtc_src_path, directory, '**', '*.h'), recursive=True):
+                _copy_tree(webrtc_src_path, file_path, include_path)
+
+
+def dist_lib(conf, mode, clean=True):
+    util.cd(config.PATH_ROOT)
+
+    webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
+    dist_path = util.getpath(config.DIR_DIST)
+
+    name = _generate_name(conf)
+    out_path = _generate_out(conf, mode)
+
+    lib_path = os.path.join(dist_path, 'lib')
+
+    if clean:
+        shutil.rmtree(lib_path, ignore_errors=True)
+
+    os.makedirs(lib_path, exist_ok=True)
+
     for file_path in glob.iglob(os.path.join(webrtc_src_path, out_path, 'obj', '*.lib')):
         shutil.copy(file_path, lib_path)
 
     for file_path in glob.iglob(os.path.join(webrtc_src_path, out_path, 'obj', '*.a')):
         shutil.copy(file_path, lib_path)
+
+
+def archive(conf):
+    util.cd(config.PATH_ROOT)
+
+    dist_path = util.getpath(config.DIR_DIST)
+    name = _generate_name(conf)
 
     format = 'zip'
     shutil.make_archive(name, format, dist_path)
@@ -247,11 +322,18 @@ def archive(conf):
 
 
 if __name__ == '__main__':
-    args = parse_args()
-    conf = parse_conf(args)
+    conf = parse_conf(parse_args())
 
     setup(conf)
     pull(conf)
-    # patch(conf)
-    build(conf)
-    archive(conf)
+
+    patch(conf)
+
+    dist_headers(conf)
+
+    for mode in conf['mode']:
+        build(conf, mode)
+        dist_lib(conf, mode)
+
+    if not conf['no_archive']:
+        archive(conf)

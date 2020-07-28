@@ -4,6 +4,7 @@ import sys
 
 import config
 
+
 def cd(*path):
     abs_path = getpath(*path)
     if not os.path.exists(abs_path):

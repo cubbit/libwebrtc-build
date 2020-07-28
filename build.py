@@ -49,6 +49,17 @@ def fetch_last(args, conf):
     return conf
 
 
+def retrieve_commit(conf):
+    util.cd(util.getpath(config.PATH_WEBRTC, 'src'))
+    conf['webrtc_commit'] = util.exec_stdout('git', 'log', '--format="%H"', '-n', '1').decode("utf-8").strip().strip("\"")
+
+    if conf['boringssl']:
+        util.cd(util.getpath(config.PATH_BORINGSSL))
+        conf['boringssl_commit'] = util.exec_stdout('git', 'log', '--format="%H"', '-n', '1').decode("utf-8").strip().strip("\"")
+
+    return conf
+
+
 def parse_conf(args):
     conf = {}
 
@@ -76,7 +87,7 @@ def parse_conf(args):
     else:
         conf['branch'] = args.branch
 
-    return conf
+    return retrieve_commit(conf)
 
 
 def setup(conf):
@@ -158,7 +169,7 @@ def _generate_args(conf, mode):
     if conf['cubbit']:
         args = args + config.cubbit_default['gn_args']
 
-    if mode is 'debug':
+    if mode == 'debug':
         args.append('is_debug=true')
         args.append('enable_iterator_debugging=true')
         args.append('use_debug_fission=false')
@@ -189,7 +200,7 @@ def _generate_args(conf, mode):
 
 def _generate_name(conf, mode=None):
     separator = '-'
-    name = 'webrtc'
+    name = 'webrtc_{}'.format(conf['webrtc_commit'][:8])
 
     name = separator.join([name, conf["branch"]])
 
@@ -204,13 +215,13 @@ def _generate_name(conf, mode=None):
 
     if conf['boringssl']:
         name = separator.join(
-            [name, 'boringssl_{}'.format(conf['boringssl'][:8])])
+            [name, 'boringssl_{}'.format(conf['boringssl_commit'][:8])])
 
     if conf['no_log']:
         name = separator.join([name, 'nolog'])
 
     if mode:
-        if mode is 'debug':
+        if mode == 'debug':
             name = separator.join([name, 'debug'])
         else:
             name = separator.join([name, 'release'])
@@ -295,7 +306,7 @@ def dist_lib(conf, mode, clean=True):
     name = _generate_name(conf)
     out_path = _generate_out(conf, mode)
 
-    lib_path = os.path.join(dist_path, 'lib')
+    lib_path = os.path.join(dist_path, 'lib', mode.lower().capitalize())
 
     if clean:
         shutil.rmtree(lib_path, ignore_errors=True)
@@ -327,7 +338,7 @@ if __name__ == '__main__':
     setup(conf)
     pull(conf)
 
-    patch(conf)
+    # patch(conf)
 
     dist_headers(conf)
 

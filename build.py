@@ -245,7 +245,7 @@ def build(conf, mode):
     if sys.platform == 'linux':
         util.exec('bash', 'build/install-build-deps.sh', '--no-prompt')
 
-    if(conf['os'] == 'linux')
+    if(conf['os'] == 'linux'):
         util.exec('python', 'build/linux/sysroot_scripts/install-sysroot.py', '--arch={}'.format(conf['cpu']))
 
     args = _generate_args(conf, mode)

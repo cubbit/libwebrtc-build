@@ -43,8 +43,8 @@ def fetch_last(args, conf):
         'https://chromiumdash.appspot.com/fetch_milestones').read())
     conf['branch'] = chromium_releases[0]['webrtc_branch']
 
-    if not args.build_boringssl:
-        conf['boringssl'] = 'master-with-bazel'
+    #if not args.build_boringssl:
+    #    conf['boringssl'] = 'master-with-bazel'
 
     return conf
 

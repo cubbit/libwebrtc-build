@@ -132,6 +132,7 @@ def pull(conf):
 
     util.cd(webrtc_path)
     if not util.exists(webrtc_path, '.gclient'):
+        os.rmdir(util.getpath(config.PATH_WEBRTC, 'src'))
         util.exec('fetch', '--nohooks', 'webrtc')
 
     util.cd(webrtc_path, 'src')

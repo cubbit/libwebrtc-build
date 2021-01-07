@@ -1,0 +1,124 @@
+name: Windows-x64
+
+on:
+  schedule:
+    - cron:  '30 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      milestone:
+        description: 'Milestone to build'
+        required: true
+        default: 'last'
+
+jobs:
+  run-checks:
+    runs-on: ubuntu-latest
+    outputs:
+      new_milestone: ${{ steps.latest_milestone.outputs.new_milestone }}
+      artifact_present: ${{ steps.check_artifact_release.outputs.artifact_present }}
+    steps:
+      - name: Check latest available milestone
+        id: latest_milestone
+        run: |
+            if [[ "${{ github.event.inputs.milestone }}" == "" ]] || [[ "${{ github.event.inputs.milestone }}" == "last" ]]; then
+              LATEST_MILESTONE=$(curl -s https://chromiumdash.appspot.com/fetch_milestones | jq -r .[0].webrtc_branch)
+              echo "Going to build milestone $LATEST_MILESTONE"
+              echo "::set-output name=new_milestone::$LATEST_MILESTONE"
+            else
+              echo "Going to build milestone ${{ github.event.inputs.milestone }}"
+              echo "::set-output name=new_milestone::${{ github.event.inputs.milestone }}"
+            fi
+      - name: Check artifact on release
+        id: check_artifact_release
+        run: |
+          echo "::set-output name=artifact_present::false"
+          TAG="${{ steps.latest_milestone.outputs.new_milestone }}"
+          ASSET=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases | jq ".[] | select(.\"tag_name\"==\"$TAG\") | .\"assets\" | select(.[].\"name\"|test(\"$TAG-win-x64\"))")
+          if [[ "$ASSET" != "" ]]; then
+            echo "::set-output name=artifact_present::true"
+            echo "Asset for ${{ steps.latest_milestone.outputs.new_milestone }} already uploaded."
+          fi
+
+  build-win-x64:
+    needs: run-checks
+    runs-on: windows-latest
+    outputs:
+      artifact_name: ${{ steps.compile.outputs.artifact_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Compile win-x64
+        id: compile
+        if: needs.run-checks.outputs.artifact_present == 'false'
+        run: |
+            $FOLDER=Invoke-Command {(Get-Item .).Name}
+            mkdir C:\custom-workspace
+            Copy-Item -Path (Get-Item .).FullName -Destination "C:\custom-workspace" -Recurse
+            cd C:\custom-workspace\$FOLDER
+            if (( "${{ github.event.inputs.milestone }}" -eq "" ) -or ( "${{ github.event.inputs.milestone }}" -eq "last" )) {
+              echo "Building last milestone..."
+              python build.py --last --cpu x64 --os win --no-log
+            } else {
+              echo "Building ${{ github.event.inputs.milestone }} milestone..."
+              python build.py --branch ${{ github.event.inputs.milestone }} --cpu x64 --os win --no-log
+            }
+            mkdir artifacts
+            mv *.zip artifacts/
+            $ARTIFACT=Invoke-Command {Get-ChildItem -Path "artifacts/*${{ needs.run-checks.outputs.new_milestone }}-win-x64*" -Name}
+            echo "::set-output name=artifact_name::$ARTIFACT"
+            echo "::set-output name=folder_name::$FOLDER"
+      - name: Upload artifact
+        if: needs.run-checks.outputs.artifact_present == 'false'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.compile.outputs.artifact_name }}
+          path: C:\custom-workspace\${{ steps.compile.outputs.folder_name }}\artifacts
+          if-no-files-found: error
+
+  release:
+    needs: [run-checks, build-win-x64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Check release
+        id: check_release
+        run: |
+          echo "::set-output name=release_present::false"
+          RELEASE_CODE=$(curl --write-out '%{http_code}' --silent --output /dev/null https://github.com/$GITHUB_REPOSITORY/releases/tag/${{ needs.run-checks.outputs.new_milestone }})
+          if [[ "$RELEASE_CODE" == "200" ]]; then
+            echo "::set-output name=release_present::true"
+            echo "Release ${{ needs.run-checks.outputs.new_milestone }} already created."
+          fi
+      - name: Create release
+        id: create_release
+        if: steps.check_release.outputs.release_present == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.run-checks.outputs.new_milestone }}
+          release_name: ${{ needs.run-checks.outputs.new_milestone }}
+          draft: false
+          prerelease: false
+      - name: Download artifacts
+        id: download_artifacts
+        if: needs.run-checks.outputs.artifact_present == 'false'
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.build-win-x64.outputs.artifact_name }}
+          path: artifacts
+      - name: Upload release
+        id: upload_release_asset
+        if: needs.run-checks.outputs.artifact_present == 'false'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: artifacts/${{ needs.build-win-x64.outputs.artifact_name }}
+          asset_name: ${{ needs.build-win-x64.outputs.artifact_name }}
+          tag: ${{ needs.run-checks.outputs.new_milestone }}
+          overwrite: true

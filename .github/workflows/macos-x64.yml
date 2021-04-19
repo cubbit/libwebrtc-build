@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "::set-output name=artifact_present::false"
           TAG="${{ steps.latest_milestone.outputs.new_milestone }}"
-          ASSET=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases | jq ".[] | select(.\"tag_name\"==\"$TAG\") | .\"assets\" | select(.[].\"name\"|test(\"$TAG-macos-x64\"))")
+          ASSET=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases | jq ".[] | select(.\"tag_name\"==\"$TAG\") | .\"assets\" | select(.[].\"name\"|test(\"$TAG-mac-x64\"))")
           if [[ "$ASSET" != "" ]]; then
             echo "::set-output name=artifact_present::true"
             echo "Asset for ${{ steps.latest_milestone.outputs.new_milestone }} already uploaded."

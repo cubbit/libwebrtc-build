@@ -1,5 +1,5 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index e60d7dd0bd..358bb769ca 100644
+index e60d7dd0bd..505f6457fe 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -431,6 +431,16 @@ config("common_config") {
@@ -13,7 +13,7 @@ index e60d7dd0bd..358bb769ca 100644
 +    ]
 +    include_dirs = [
 +      "/usr/lib/llvm-10/include/c++/v1/",
-+      "/usr/lib/llvm/include/c++/v1/",
++      "/usr/include/c++/v1",
 +    ]
 +  }
  }

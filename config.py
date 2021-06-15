@@ -33,6 +33,7 @@ LEGACY_HEADERS = [
     'media/engine',
     'modules/audio_coding/include',
     'modules/audio_device/include',
+    'modules/async_audio_processing',
     'modules/audio_processing/include',
     'modules/bitrate_controller/include',
     'modules/congestion_controller/include',

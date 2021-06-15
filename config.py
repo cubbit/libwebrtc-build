@@ -2,6 +2,7 @@ import os
 
 PATH_ROOT = os.path.dirname(os.path.abspath(__file__))
 
+DIR_PATCH = 'patches'
 DIR_DIST = 'dist'
 DIR_BUILD = 'build'
 DIR_DEPOT_TOOLS = DIR_BUILD + os.path.sep + 'depot_tools'
@@ -81,4 +82,9 @@ cubbit_default["gn_args"] = [
     'rtc_build_tools=false',
     # 'rtc_exclude_transient_suppressor=true',
     'rtc_disable_trace_events=true',
+]
+
+webrtc_patches = {}
+webrtc_patches["linux_x64"] = [
+    'linux_libcxx.patch'
 ]

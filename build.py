@@ -145,21 +145,14 @@ def pull(conf):
     util.exec('gclient', 'sync', '-D')
 
 
-# def patch(conf):
-#     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
+def patch(conf):
+    webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
+    patches_path = util.getpath(config.DIR_PATCH)
 
-#     if conf['no_log']:
-#         log_file = os.path.join(
-#             webrtc_src_path, 'rtc_base{}logging.cc'.format(os.path.sep))
-#         with open(log_file, 'r') as file:
-#             filedata = file.read()
-#         filedata = filedata.replace(
-#             'LoggingSeverity g_min_sev = LS_INFO', 'LoggingSeverity g_min_sev = LS_NONE')
-#         filedata = filedata.replace(
-#             'LoggingSeverity g_dbg_sev = LS_INFO', 'LoggingSeverity g_dbg_sev = LS_NONE')
-#         with open(log_file, 'w') as file:
-#             file.write(filedata)
+    util.cd(webrtc_src_path)
 
+    for patch in config.webrtc_patches['{}_{}'.format(conf['os'], conf['cpu'])]:
+        util.exec('git', 'apply', os.path.join(patches_path, patch))
 
 def _generate_args(conf, mode):
     args = []
@@ -342,7 +335,7 @@ if __name__ == '__main__':
     setup(conf)
     pull(conf)
 
-    # patch(conf)
+    patch(conf)
 
     dist_headers(conf)
 

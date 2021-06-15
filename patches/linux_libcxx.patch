@@ -1,0 +1,20 @@
+diff --git a/BUILD.gn b/BUILD.gn
+index e60d7dd0bd..2328f59e52 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -431,6 +431,15 @@ config("common_config") {
+       "/U_UNICODE",
+     ]
+   }
++
++  if(is_linux && is_clang) {
++    cflags_cc += [
++      "-stdlib=libc++",
++    ]
++    include_dirs = [
++      "/usr/lib/llvm-10/include/c++/v1/",
++    ]
++  }
+ }
+
+ config("common_objc") {

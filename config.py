@@ -27,6 +27,7 @@ LEGACY_HEADERS = [
     'common_audio/include',
     'common_video/generic_frame_descriptor',
     'common_video/include',
+    'common_video',
     'logging/rtc_event_log',
     'logging/rtc_event_log/events',
     'media/base',

@@ -1,15 +1,23 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index e60d7dd0bd..1eb3852083 100644
+index e60d7dd0bd..0893df45df 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -431,6 +431,18 @@ config("common_config") {
+@@ -431,6 +431,26 @@ config("common_config") {
        "/U_UNICODE",
      ]
    }
 +
 +  if(is_linux && is_clang) {
++    defines += [
++      "_LIBCPP_ABI_UNSTABLE",
++    ]
 +    cflags_cc += [
-+      "-stdlib=libc++",
++      #"-stdlib=libc++",
++      "-nostdinc++",
++    ]
++    ldflags = [
++      "-lc++",
++      "-lc++abi",
 +    ]
 +    lib_dirs = [
 +      "../../libcxx/lib",

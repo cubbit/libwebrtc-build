@@ -126,6 +126,12 @@ def setup(conf):
         else:
             conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL)
 
+    if conf['os'] == 'linux':
+        util.cd(config.PATH_LIBCXX)
+        url = config.libcxx_url['linux_' + conf['cpu']]
+        util.exec('wget', url)
+        util.exec('tar', 'xvaf', url.split('/')[-1], '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
+
 
 def pull(conf):
     webrtc_path = util.getpath(config.PATH_WEBRTC)

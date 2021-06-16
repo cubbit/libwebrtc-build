@@ -1,8 +1,8 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index e60d7dd0bd..505f6457fe 100644
+index e60d7dd0bd..1eb3852083 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -431,6 +431,16 @@ config("common_config") {
+@@ -431,6 +431,18 @@ config("common_config") {
        "/U_UNICODE",
      ]
    }
@@ -11,9 +11,11 @@ index e60d7dd0bd..505f6457fe 100644
 +    cflags_cc += [
 +      "-stdlib=libc++",
 +    ]
++    lib_dirs = [
++      "../../libcxx/lib",
++    ]
 +    include_dirs = [
-+      "/usr/lib/llvm-10/include/c++/v1/",
-+      "/usr/include/c++/v1",
++      "../../libcxx/include/c++/v1/",
 +    ]
 +  }
  }

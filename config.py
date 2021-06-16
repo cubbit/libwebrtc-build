@@ -8,10 +8,12 @@ DIR_BUILD = 'build'
 DIR_DEPOT_TOOLS = DIR_BUILD + os.path.sep + 'depot_tools'
 DIR_WEBRTC = DIR_BUILD + os.path.sep + 'webrtc'
 DIR_BORINGSSL = DIR_BUILD + os.path.sep + 'boringssl'
+DIR_LIBCXX = DIR_BUILD + os.path.sep + 'libcxx'
 
 PATH_DEPOT_TOOLS = os.path.join(PATH_ROOT, DIR_DEPOT_TOOLS)
 PATH_WEBRTC = os.path.join(PATH_ROOT, DIR_WEBRTC)
 PATH_BORINGSSL = os.path.join(PATH_ROOT, DIR_BORINGSSL)
+PATH_LIBCXX = os.path.join(PATH_ROOT, DIR_LIBCXX)
 
 # https://chromiumdash.appspot.com/branches
 WEBRTC_BRANCH_PREFIX = "refs/remotes/branch-heads/"
@@ -85,6 +87,10 @@ cubbit_default["gn_args"] = [
 ]
 
 webrtc_patches = {}
-webrtc_patches["linux_x64"] = [
+webrtc_patches['linux_x64'] = [
     'linux_libcxx.patch'
 ]
+
+libcxx_url = {}
+libcxx_url['linux_x64'] = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz'
+libcxx_url['linux_arm64'] = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-aarch64-linux-gnu.tar.xz'

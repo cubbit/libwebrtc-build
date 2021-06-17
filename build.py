@@ -129,7 +129,8 @@ def setup(conf):
     if conf['os'] == 'linux':
         util.cd(config.PATH_LIBCXX)
         url = config.libcxx_url['linux_' + conf['cpu']]
-        util.exec('wget', url)
+        if not os.path.exists(os.path.abspath(url.split('/')[-1])):
+            util.exec('wget', url)
         util.exec('tar', 'xvaf', url.split('/')[-1], '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
 
 
@@ -152,13 +153,11 @@ def pull(conf):
 
 
 def patch(conf):
-    webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
     patches_path = util.getpath(config.DIR_PATCH)
 
-    util.cd(webrtc_src_path)
-
-    for patch in config.webrtc_patches['{}_{}'.format(conf['os'], conf['cpu'])]:
-        util.exec('git', 'apply', os.path.join(patches_path, patch))
+    for patch in config.patches['{}_{}'.format(conf['os'], conf['cpu'])]:
+        util.cd(patch[0])
+        util.exec('git', 'apply', os.path.join(patches_path, patch[1]))
 
 def _generate_args(conf, mode):
     args = []

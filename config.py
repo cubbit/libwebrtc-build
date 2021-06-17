@@ -93,4 +93,3 @@ patches['linux_x64'] = [
 
 libcxx_url = {}
 libcxx_url['linux_x64'] = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz'
-libcxx_url['linux_arm64'] = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-aarch64-linux-gnu.tar.xz'

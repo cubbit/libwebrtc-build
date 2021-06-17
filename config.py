@@ -2,15 +2,18 @@ import os
 
 PATH_ROOT = os.path.dirname(os.path.abspath(__file__))
 
+DIR_PATCH = 'patches'
 DIR_DIST = 'dist'
 DIR_BUILD = 'build'
 DIR_DEPOT_TOOLS = DIR_BUILD + os.path.sep + 'depot_tools'
 DIR_WEBRTC = DIR_BUILD + os.path.sep + 'webrtc'
 DIR_BORINGSSL = DIR_BUILD + os.path.sep + 'boringssl'
+DIR_LIBCXX = DIR_BUILD + os.path.sep + 'libcxx'
 
 PATH_DEPOT_TOOLS = os.path.join(PATH_ROOT, DIR_DEPOT_TOOLS)
 PATH_WEBRTC = os.path.join(PATH_ROOT, DIR_WEBRTC)
 PATH_BORINGSSL = os.path.join(PATH_ROOT, DIR_BORINGSSL)
+PATH_LIBCXX = os.path.join(PATH_ROOT, DIR_LIBCXX)
 
 # https://chromiumdash.appspot.com/branches
 WEBRTC_BRANCH_PREFIX = "refs/remotes/branch-heads/"
@@ -82,3 +85,11 @@ cubbit_default["gn_args"] = [
     # 'rtc_exclude_transient_suppressor=true',
     'rtc_disable_trace_events=true',
 ]
+
+patches = {}
+patches['linux_x64'] = [
+    (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux.patch'),
+]
+
+libcxx_url = {}
+libcxx_url['linux_x64'] = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz'

@@ -65,6 +65,7 @@ def parse_conf(args):
 
     conf['cpu'] = args.cpu
     conf['os'] = args.os
+    conf['platform'] = '{}_{}'.format(args.os, args.cpu)
 
     conf['boringssl'] = args.boringssl
 
@@ -126,6 +127,13 @@ def setup(conf):
         else:
             conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL)
 
+    if conf['platform'] in config.libcxx_url.keys():
+        util.cd(config.PATH_LIBCXX)
+        url = config.libcxx_url[conf['platform']]
+        if not os.path.exists(os.path.abspath(url.split('/')[-1])):
+            util.exec('wget', url)
+        util.exec('tar', 'xvaf', url.split('/')[-1], '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
+
 
 def pull(conf):
     webrtc_path = util.getpath(config.PATH_WEBRTC)
@@ -142,24 +150,16 @@ def pull(conf):
     util.exec('git', 'checkout', "{}{}".format(
         config.WEBRTC_BRANCH_PREFIX, conf["branch"]))
 
-    util.exec('gclient', 'sync', '-D')
+    util.exec('gclient', 'sync', '-RD')
 
 
-# def patch(conf):
-#     webrtc_src_path = util.getpath(config.PATH_WEBRTC, 'src')
+def patch(conf):
+    patches_path = util.getpath(config.DIR_PATCH)
 
-#     if conf['no_log']:
-#         log_file = os.path.join(
-#             webrtc_src_path, 'rtc_base{}logging.cc'.format(os.path.sep))
-#         with open(log_file, 'r') as file:
-#             filedata = file.read()
-#         filedata = filedata.replace(
-#             'LoggingSeverity g_min_sev = LS_INFO', 'LoggingSeverity g_min_sev = LS_NONE')
-#         filedata = filedata.replace(
-#             'LoggingSeverity g_dbg_sev = LS_INFO', 'LoggingSeverity g_dbg_sev = LS_NONE')
-#         with open(log_file, 'w') as file:
-#             file.write(filedata)
-
+    if conf['platform'] in config.patches.keys():
+        for patch in config.patches[conf['platform']]:
+            util.cd(patch[0])
+            util.exec('git', 'apply', os.path.join(patches_path, patch[1]))
 
 def _generate_args(conf, mode):
     args = []
@@ -342,7 +342,7 @@ if __name__ == '__main__':
     setup(conf)
     pull(conf)
 
-    # patch(conf)
+    patch(conf)
 
     dist_headers(conf)
 

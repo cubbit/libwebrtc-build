@@ -156,9 +156,10 @@ def pull(conf):
 def patch(conf):
     patches_path = util.getpath(config.DIR_PATCH)
 
-    for patch in config.patches['{}_{}'.format(conf['os'], conf['cpu'])]:
-        util.cd(patch[0])
-        util.exec('git', 'apply', os.path.join(patches_path, patch[1]))
+    if conf['platform'] in config.patches.keys():
+        for patch in config.patches[conf['platform']]:
+            util.cd(patch[0])
+            util.exec('git', 'apply', os.path.join(patches_path, patch[1]))
 
 def _generate_args(conf, mode):
     args = []

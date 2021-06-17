@@ -88,7 +88,6 @@ cubbit_default["gn_args"] = [
 
 patches = {}
 patches['linux_x64'] = [
-    #('webrtc/src', 'linux_libcxx.patch'),
     (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux.patch'),
 ]
 

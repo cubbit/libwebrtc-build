@@ -65,6 +65,7 @@ def parse_conf(args):
 
     conf['cpu'] = args.cpu
     conf['os'] = args.os
+    conf['platform'] = '{}_{}'.format(args.os, args.cpu)
 
     conf['boringssl'] = args.boringssl
 
@@ -126,9 +127,9 @@ def setup(conf):
         else:
             conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL)
 
-    if conf['os'] == 'linux':
+    if conf['platform'] in config.libcxx_url.keys():
         util.cd(config.PATH_LIBCXX)
-        url = config.libcxx_url['linux_' + conf['cpu']]
+        url = config.libcxx_url[conf['platform']]
         if not os.path.exists(os.path.abspath(url.split('/')[-1])):
             util.exec('wget', url)
         util.exec('tar', 'xvaf', url.split('/')[-1], '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
@@ -149,7 +150,7 @@ def pull(conf):
     util.exec('git', 'checkout', "{}{}".format(
         config.WEBRTC_BRANCH_PREFIX, conf["branch"]))
 
-    util.exec('gclient', 'sync', '-D')
+    util.exec('gclient', 'sync', '-RD')
 
 
 def patch(conf):

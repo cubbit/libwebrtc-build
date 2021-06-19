@@ -15,6 +15,8 @@ def parse_args():
 
     revision = parser.add_mutually_exclusive_group(required=True)
     revision.add_argument('--last', action='store_true')
+    revision.add_argument('--stable', action='store_true')
+    revision.add_argument('--beta', action='store_true')
     revision.add_argument('--branch', type=str, action='store')
 
     parser.add_argument('--cpu', type=str, action='store', required=True)
@@ -38,24 +40,42 @@ def parse_args():
     return parser.parse_args()
 
 
-def fetch_last(args, conf):
+def fetch_branch(args, conf):
     chromium_releases = json.loads(urllib.request.urlopen(
         'https://chromiumdash.appspot.com/fetch_milestones').read())
-    conf['branch'] = chromium_releases[0]['webrtc_branch']
 
-    #if not args.build_boringssl:
+    for release in chromium_releases:
+        if args.last:
+            if 'webrtc_branch' in release and release['webrtc_branch']:
+                conf['branch'] = release['webrtc_branch']
+                break
+        elif args.beta:
+            if 'schedule_phase' in release and release['schedule_phase'] == 'beta':
+                conf['branch'] = release['webrtc_branch']
+                break
+        elif args.stable:
+            if 'schedule_phase' in release and release['schedule_phase'] == 'stable':
+                conf['branch'] = release['webrtc_branch']
+                break
+
+    # if not args.build_boringssl:
     #    conf['boringssl'] = 'master-with-bazel'
+
+    if not conf['branch']:
+        raise Exception('Cannot find branch')
 
     return conf
 
 
 def retrieve_commit(conf):
     util.cd(util.getpath(config.PATH_WEBRTC, 'src'))
-    conf['webrtc_commit'] = util.exec_stdout('git', 'log', '--format="%H"', '-n', '1').decode("utf-8").strip().strip("\"")
+    conf['webrtc_commit'] = util.exec_stdout(
+        'git', 'log', '--format="%H"', '-n', '1').decode("utf-8").strip().strip("\"")
 
     if conf['boringssl']:
         util.cd(util.getpath(config.PATH_BORINGSSL))
-        conf['boringssl_commit'] = util.exec_stdout('git', 'log', '--format="%H"', '-n', '1').decode("utf-8").strip().strip("\"")
+        conf['boringssl_commit'] = util.exec_stdout(
+            'git', 'log', '--format="%H"', '-n', '1').decode("utf-8").strip().strip("\"")
 
     return conf
 
@@ -83,10 +103,10 @@ def parse_conf(args):
     conf['no_archive'] = bool(args.no_archive)
     conf['specific_out_dir'] = bool(args.specific_out_dir)
 
-    if args.last:
-        conf = fetch_last(args, conf)
-    else:
+    if args.branch:
         conf['branch'] = args.branch
+    else:
+        conf = fetch_branch(args, conf)
 
     return retrieve_commit(conf)
 
@@ -132,7 +152,8 @@ def setup(conf):
         url = config.libcxx_url[conf['platform']]
         if not os.path.exists(os.path.abspath(url.split('/')[-1])):
             util.exec('wget', url)
-        util.exec('tar', 'xvaf', url.split('/')[-1], '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
+        util.exec('tar', 'xvaf', url.split('/')[-1],
+                  '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
 
 
 def pull(conf):
@@ -160,6 +181,7 @@ def patch(conf):
         for patch in config.patches[conf['platform']]:
             util.cd(patch[0])
             util.exec('git', 'apply', os.path.join(patches_path, patch[1]))
+
 
 def _generate_args(conf, mode):
     args = []
@@ -247,7 +269,8 @@ def build(conf, mode):
         util.exec('bash', 'build/install-build-deps.sh', '--no-prompt')
 
     if(conf['os'] == 'linux'):
-        util.exec('python', 'build/linux/sysroot_scripts/install-sysroot.py', '--arch={}'.format(conf['cpu']))
+        util.exec('python', 'build/linux/sysroot_scripts/install-sysroot.py',
+                  '--arch={}'.format(conf['cpu']))
 
     args = _generate_args(conf, mode)
     out_path = _generate_out(conf, mode)

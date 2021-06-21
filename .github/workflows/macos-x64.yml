@@ -21,7 +21,7 @@ jobs:
         id: latest_milestone
         run: |
             if [[ "${{ github.event.inputs.milestone }}" == "" ]] || [[ "${{ github.event.inputs.milestone }}" == "last" ]]; then
-              LATEST_MILESTONE=$(curl -s https://chromiumdash.appspot.com/fetch_milestones | jq -r .[0].webrtc_branch)
+              LATEST_MILESTONE=$(curl -s https://chromiumdash.appspot.com/fetch_milestones | jq -r '.[].webrtc_branch | select(. != "" and . != null)' | head -n 1)
               echo "Going to build milestone $LATEST_MILESTONE"
               echo "::set-output name=new_milestone::$LATEST_MILESTONE"
             else

@@ -75,7 +75,6 @@ cubbit_default["gn_args"] = [
     'rtc_include_opus=false',
     'rtc_include_pulse_audio=false',
     'rtc_use_dummy_audio_file_devices=true',
-    'rtc_use_gtk=false',
     'rtc_use_x11=false',
     'use_custom_libcxx=false',
 
@@ -83,7 +82,7 @@ cubbit_default["gn_args"] = [
     'rtc_disable_metrics=false',
     'rtc_build_tools=false',
     # 'rtc_exclude_transient_suppressor=true',
-    'rtc_disable_trace_events=true',
+    'rtc_disable_trace_events=false',
 ]
 
 patches = {}

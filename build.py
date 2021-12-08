@@ -115,7 +115,7 @@ def setup(conf):
     util.cd(config.DIR_BUILD)
     if os.path.exists(util.getpath(config.PATH_DEPOT_TOOLS)):
         util.cd(config.PATH_DEPOT_TOOLS)
-        util.exec('git', 'checkout', '-f', 'master')
+        util.exec('git', 'checkout', '-f', 'main')
         util.exec('git', 'pull')
     else:
         util.exec('git', 'clone', 'https://chromium.googlesource.com/chromium/tools/depot_tools.git',

@@ -1,4 +1,4 @@
-name: Linux-x64-llvm
+name: Linux-x64-gnu
 
 on:
   schedule:
@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "::set-output name=artifact_present::false"
           TAG="${{ steps.latest_milestone.outputs.new_milestone }}"
-          ASSET=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases | jq ".[] | select(.\"tag_name\"==\"$TAG\") | .\"assets\" | select(.[].\"name\"|test(\"$TAG-linux-x64-llvm\"))")
+          ASSET=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases | jq ".[] | select(.\"tag_name\"==\"$TAG\") | .\"assets\" | select(.[].\"name\"|test(\"$TAG-linux-x64-gnu\"))")
           if [[ "$ASSET" != "" ]]; then
             echo "::set-output name=artifact_present::true"
             echo "Asset for ${{ steps.latest_milestone.outputs.new_milestone }} already uploaded."
@@ -57,14 +57,14 @@ jobs:
         run: |
             if [[ "${{ github.event.inputs.milestone }}" == "" ]] || [[ "${{ github.event.inputs.milestone }}" == "last" ]]; then
               echo "Building last milestone..."
-              python build.py --last --cpu x64 --os linux --no-log --stdlib=llvm
+              python build.py --last --cpu x64 --os linux --no-log --stdlib=gnu
             else
               echo "Building ${{ github.event.inputs.milestone }} milestone..."
-              python build.py --branch ${{ github.event.inputs.milestone }} --cpu x64 --os linux --no-log --stdlib=llvm
+              python build.py --branch ${{ github.event.inputs.milestone }} --cpu x64 --os linux --no-log --stdlib=gnu
             fi
             mkdir artifacts
             mv *.zip artifacts/
-            ARTIFACT=$(find artifacts -name "*${{ needs.run-checks.outputs.new_milestone }}-linux-x64-llvm*" | awk -F/ '{print $NF}')
+            ARTIFACT=$(find artifacts -name "*${{ needs.run-checks.outputs.new_milestone }}-linux-x64-gnu*" | awk -F/ '{print $NF}')
             echo "::set-output name=artifact_name::$ARTIFACT"
       - name: Upload artifact
         if: needs.run-checks.outputs.artifact_present == 'false'

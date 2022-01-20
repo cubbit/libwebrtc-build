@@ -21,6 +21,7 @@ def parse_args():
 
     parser.add_argument('--cpu', type=str, action='store', required=True)
     parser.add_argument('--os', type=str, action='store', required=True)
+    parser.add_argument('--stdlib', default='default', type=str, action='store', required=False)
 
     ssl = parser.add_mutually_exclusive_group()
     ssl.add_argument('--boringssl', type=str, action='store')
@@ -87,6 +88,14 @@ def parse_conf(args):
     conf['os'] = args.os
     conf['platform'] = '{}_{}'.format(args.os, args.cpu)
 
+    if conf['cpu'] == 'x64' and conf['os'] == 'linux':
+        if args.stdlib == 'default' or args.stdlib == 'llvm':
+            conf['stdlib'] = 'llvm'
+        elif args.stdlib == 'gnu':
+            conf['stdlib'] = 'gnu'
+    else:
+        conf['stdlib'] = args.stdlib
+
     conf['boringssl'] = args.boringssl
 
     conf['cubbit'] = not bool(args.no_cubbit)
@@ -147,7 +156,7 @@ def setup(conf):
         else:
             conf['boringssl_path'] = util.getpath(config.PATH_BORINGSSL)
 
-    if conf['platform'] in config.libcxx_url.keys():
+    if conf['stdlib'] == 'llvm' and conf['platform'] in config.libcxx_url.keys():
         util.cd(config.PATH_LIBCXX)
         url = config.libcxx_url[conf['platform']]
         if not os.path.exists(os.path.abspath(url.split('/')[-1])):
@@ -176,9 +185,10 @@ def pull(conf):
 
 def patch(conf):
     patches_path = util.getpath(config.DIR_PATCH)
+    patch_key = "_".join([conf['platform'], conf['stdlib']])
 
-    if conf['platform'] in config.patches.keys():
-        for patch in config.patches[conf['platform']]:
+    if patch_key in config.patches.keys():
+        for patch in config.patches[patch_key]:
             util.cd(patch[0])
             util.exec('git', 'apply', os.path.join(patches_path, patch[1]))
 
@@ -229,6 +239,7 @@ def _generate_name(conf, mode=None):
 
     name = separator.join([name, conf['os']])
     name = separator.join([name, conf['cpu']])
+    name = separator.join([name, conf['stdlib']])
 
     if conf['cubbit']:
         name = separator.join([name, 'cubbit'])

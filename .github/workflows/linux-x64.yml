@@ -1,4 +1,4 @@
-name: Linux-x64
+name: Linux-x64-gnu
 
 on:
   schedule:
@@ -57,10 +57,10 @@ jobs:
         run: |
             if [[ "${{ github.event.inputs.milestone }}" == "" ]] || [[ "${{ github.event.inputs.milestone }}" == "last" ]]; then
               echo "Building last milestone..."
-              python build.py --last --cpu x64 --os linux --no-log
+              python build.py --last --cpu x64 --os linux --no-log --stdlib=gnu
             else
               echo "Building ${{ github.event.inputs.milestone }} milestone..."
-              python build.py --branch ${{ github.event.inputs.milestone }} --cpu x64 --os linux --no-log
+              python build.py --branch ${{ github.event.inputs.milestone }} --cpu x64 --os linux --no-log --stdlib=gnu
             fi
             mkdir artifacts
             mv *.zip artifacts/

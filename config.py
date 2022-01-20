@@ -86,7 +86,7 @@ cubbit_default["gn_args"] = [
 ]
 
 patches = {}
-patches['linux_x64'] = [
+patches['linux_x64_llvm'] = [
     (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux.patch'),
 ]
 

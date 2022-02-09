@@ -1,0 +1,13 @@
+diff --git a/config/compiler/BUILD.gn b/config/compiler/BUILD.gn
+index af37ee76a..a18537970 100644
+--- a/config/compiler/BUILD.gn
++++ b/config/compiler/BUILD.gn
+@@ -1488,6 +1487,7 @@ config("default_warnings") {
+       # Disables.
+       "-Wno-missing-field-initializers",  # "struct foo f = {0};"
+       "-Wno-unused-parameter",  # Unused function parameters.
++      "-Wno-deprecated-declarations",
+     ]
+   }
+ 
+

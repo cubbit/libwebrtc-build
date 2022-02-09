@@ -77,6 +77,7 @@ cubbit_default["gn_args"] = [
     'rtc_use_dummy_audio_file_devices=true',
     'rtc_use_x11=false',
     'use_custom_libcxx=false',
+    'use_glib=false',
 
     'rtc_include_tests=false',
     'rtc_disable_metrics=false',
@@ -88,6 +89,15 @@ cubbit_default["gn_args"] = [
 patches = {}
 patches['linux_x64_llvm'] = [
     (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux.patch'),
+]
+patches['linux_x64_gnu'] = [
+    (os.path.join(PATH_WEBRTC, 'src', 'base'), 'base_config_linux.patch'),
+]
+patches['win_x64'] = [
+    (os.path.join(PATH_WEBRTC, 'src', 'build'), 'suppress_warnings.patch'),
+]
+patches['mac_x64'] = [
+    (os.path.join(PATH_WEBRTC, 'src', 'build'), 'suppress_warnings.patch'),
 ]
 
 libcxx_url = {}

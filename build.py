@@ -94,7 +94,7 @@ def parse_conf(args):
         elif args.stdlib == 'gnu':
             conf['stdlib'] = 'gnu'
     else:
-        conf['stdlib'] = args.stdlib
+        conf['stdlib'] = 'default'
 
     conf['boringssl'] = args.boringssl
 
@@ -185,7 +185,11 @@ def pull(conf):
 
 def patch(conf):
     patches_path = util.getpath(config.DIR_PATCH)
-    patch_key = "_".join([conf['platform'], conf['stdlib']])
+
+    if conf['stdlib'] != 'default':
+        patch_key = "_".join([conf['platform'], conf['stdlib']])
+    else:
+        patch_key = conf['platform']
 
     if patch_key in config.patches.keys():
         for patch in config.patches[patch_key]:

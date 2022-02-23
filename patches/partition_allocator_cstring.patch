@@ -1,0 +1,12 @@
+diff --git a/allocator/partition_allocator/partition_stats.h b/allocator/partition_allocator/partition_stats.h
+index 4d369a9e9..30e74920a 100644
+--- a/allocator/partition_allocator/partition_stats.h
++++ b/allocator/partition_allocator/partition_stats.h
+@@ -7,6 +7,7 @@
+ 
+ #include <cstddef>
+ #include <cstdint>
++#include <cstring>
+ 
+ #include "base/allocator/partition_allocator/partition_alloc_config.h"
+ #include "base/allocator/partition_allocator/partition_alloc_constants.h"

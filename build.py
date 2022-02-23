@@ -21,7 +21,8 @@ def parse_args():
 
     parser.add_argument('--cpu', type=str, action='store', required=True)
     parser.add_argument('--os', type=str, action='store', required=True)
-    parser.add_argument('--stdlib', default='default', type=str, action='store', required=False)
+    parser.add_argument('--stdlib', default='default',
+                        type=str, action='store', required=False)
 
     ssl = parser.add_mutually_exclusive_group()
     ssl.add_argument('--boringssl', type=str, action='store')

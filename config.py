@@ -90,6 +90,7 @@ patches = {}
 patches['linux_x64_llvm'] = [
     (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux.patch'),
     (os.path.join(PATH_WEBRTC, 'src', 'base'), 'partition_allocator_nullptr.patch'),
+    (os.path.join(PATH_WEBRTC, 'src', 'base'), 'partition_allocator_cstring.patch'),
 ]
 patches['linux_x64_gnu'] = [
     (os.path.join(PATH_WEBRTC, 'src', 'base'), 'base_config_linux.patch'),

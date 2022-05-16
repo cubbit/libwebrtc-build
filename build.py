@@ -282,7 +282,7 @@ def build(conf, mode):
     util.cd(webrtc_src_path)
 
     if sys.platform == 'linux':
-        util.exec('bash', 'build/install-build-deps.sh', '--no-prompt')
+        util.exec('bash', 'build/install-build-deps.sh', '--no-prompt', '--no-chromeos-fonts')
 
     if(conf['os'] == 'linux'):
         util.exec('python', 'build/linux/sysroot_scripts/install-sysroot.py',

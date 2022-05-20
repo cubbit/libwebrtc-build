@@ -15,28 +15,34 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_milestone: ${{ steps.latest_milestone.outputs.new_milestone }}
+      release_tag: ${{ steps.latest_milestone.outputs.release_tag }}
       artifact_present: ${{ steps.check_artifact_release.outputs.artifact_present }}
     steps:
       - name: Check latest available milestone
         id: latest_milestone
         run: |
+            if [[ "${{ github.ref_name }}" != "master" ]]; then
+              BRANCH="-${{ github.ref_name }}"
+            fi
             if [[ "${{ github.event.inputs.milestone }}" == "" ]] || [[ "${{ github.event.inputs.milestone }}" == "last" ]]; then
               LATEST_MILESTONE=$(curl -s https://chromiumdash.appspot.com/fetch_milestones | jq -r '.[].webrtc_branch | select(. != "" and . != null)' | head -n 1)
-              echo "Going to build milestone $LATEST_MILESTONE"
+              echo "Going to build milestone $LATEST_MILESTONE$BRANCH"
               echo "::set-output name=new_milestone::$LATEST_MILESTONE"
+              echo "::set-output name=release_tag::$LATEST_MILESTONE$BRANCH"
             else
-              echo "Going to build milestone ${{ github.event.inputs.milestone }}"
+              echo "Going to build milestone ${{ github.event.inputs.milestone }}$BRANCH"
               echo "::set-output name=new_milestone::${{ github.event.inputs.milestone }}"
+              echo "::set-output name=release_tag::${{ github.event.inputs.milestone }}$BRANCH"
             fi
       - name: Check artifact on release
         id: check_artifact_release
         run: |
           echo "::set-output name=artifact_present::false"
-          TAG="${{ steps.latest_milestone.outputs.new_milestone }}"
+          TAG="${{ steps.latest_milestone.outputs.release_tag }}"
           ASSET=$(curl -s https://api.github.com/repos/$GITHUB_REPOSITORY/releases | jq ".[] | select(.\"tag_name\"==\"$TAG\") | .\"assets\" | select(.[].\"name\"|test(\"$TAG-mac-x64\"))")
           if [[ "$ASSET" != "" ]]; then
             echo "::set-output name=artifact_present::true"
-            echo "Asset for ${{ steps.latest_milestone.outputs.new_milestone }} already uploaded."
+            echo "Asset for ${{ steps.latest_milestone.outputs.release_tag }} already uploaded."
           fi
 
   build-macos-x64:
@@ -84,10 +90,10 @@ jobs:
         id: check_release
         run: |
           echo "::set-output name=release_present::false"
-          RELEASE_CODE=$(curl --write-out '%{http_code}' --silent --output /dev/null https://github.com/$GITHUB_REPOSITORY/releases/tag/${{ needs.run-checks.outputs.new_milestone }})
+          RELEASE_CODE=$(curl --write-out '%{http_code}' --silent --output /dev/null https://github.com/$GITHUB_REPOSITORY/releases/tag/${{ needs.run-checks.outputs.release_tag }})
           if [[ "$RELEASE_CODE" == "200" ]]; then
             echo "::set-output name=release_present::true"
-            echo "Release ${{ needs.run-checks.outputs.new_milestone }} already created."
+            echo "Release ${{ needs.run-checks.outputs.release_tag }} already created."
           fi
       - name: Create release
         id: create_release
@@ -96,8 +102,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ needs.run-checks.outputs.new_milestone }}
-          release_name: ${{ needs.run-checks.outputs.new_milestone }}
+          tag_name: ${{ needs.run-checks.outputs.release_tag }}
+          release_name: ${{ needs.run-checks.outputs.release_tag }}
           draft: false
           prerelease: false
       - name: Download artifacts
@@ -115,5 +121,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: artifacts/${{ needs.build-macos-x64.outputs.artifact_name }}
           asset_name: ${{ needs.build-macos-x64.outputs.artifact_name }}
-          tag: ${{ needs.run-checks.outputs.new_milestone }}
+          tag: ${{ needs.run-checks.outputs.release_tag }}
           overwrite: true

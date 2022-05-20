@@ -77,23 +77,24 @@ cubbit_default["gn_args"] = [
     'rtc_include_pulse_audio=false',
     'rtc_use_dummy_audio_file_devices=true',
     'rtc_use_x11=false',
-    'use_custom_libcxx=false',
-    'use_glib=false',
-
     'rtc_include_tests=false',
     'rtc_disable_metrics=false',
     'rtc_build_tools=false',
-    # 'rtc_exclude_transient_suppressor=true',
     'rtc_disable_trace_events=false',
+    'rtc_exclude_audio_processing_module=true',
+    'use_custom_libcxx=false',
+    'use_glib=false',
+    'use_ozone=false',
+    'use_x11=false',
 ]
 
 patches = {}
 patches['linux_x64_llvm'] = [
-    (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux.patch'),
+    (os.path.join(PATH_WEBRTC, 'src', 'build'), 'build_config_linux-4515.patch'),
     (os.path.join(PATH_WEBRTC, 'src', 'base'), 'partition_allocator_cstring.patch'),
 ]
 patches['linux_x64_gnu'] = [
-    (os.path.join(PATH_WEBRTC, 'src', 'base'), 'base_config_linux.patch'),
+    (os.path.join(PATH_WEBRTC, 'src', 'base'), 'base_config_linux-4515.patch'),
     (os.path.join(PATH_WEBRTC, 'src', 'base'), 'partition_allocator_cstring.patch'),
 ]
 patches['linux_arm64'] = [

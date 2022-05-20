@@ -209,10 +209,12 @@ def _generate_args(conf, mode):
 
     if mode == 'debug':
         args.append('is_debug=true')
-        args.append('enable_iterator_debugging=true')
         args.append('use_debug_fission=false')
     else:
         args.append('is_debug=false')
+        args.append('is_official_build=true')
+        args.append('chrome_pgo_phase=0')
+        args.append('is_cfi=false')
 
     if conf['no_log']:
         args.append('rtc_disable_logging=true')
@@ -230,8 +232,6 @@ def _generate_args(conf, mode):
 
     if conf['os'] == 'win':
         args.append('is_clang=false')
-
-    args.append('use_custom_libcxx=false')
 
     return args
 

@@ -112,3 +112,5 @@ patches['mac_arm64'] = [
 
 libcxx_url = {}
 libcxx_url['linux_x64'] = 'https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/clang+llvm-12.0.0-x86_64-linux-gnu-ubuntu-20.04.tar.xz'
+
+yocto_sdk_url = 'https://github.com/cubbit/cubbit-linux-platform/releases/download/v3.0/cubbit-x86_64-aarch64-toolchain-3.0.sh'

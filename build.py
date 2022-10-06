@@ -94,6 +94,8 @@ def parse_conf(args):
             conf['stdlib'] = 'llvm'
         elif args.stdlib == 'gnu':
             conf['stdlib'] = 'gnu'
+    elif conf['cpu'] == 'arm64' and conf['os'] == 'linux':
+        conf['stdlib'] = 'yocto'
     else:
         conf['stdlib'] = 'default'
 
@@ -165,6 +167,12 @@ def setup(conf):
         util.exec('tar', 'xvaf', url.split('/')[-1],
                   '--strip-components=1', '--wildcards', '*/include/c++', '*/libc++*')
 
+    if conf['stdlib'] == 'yocto':
+        url = config.yocto_sdk_url
+        if not os.path.exists(os.path.abspath(url.split('/')[-1])):
+            util.exec('wget', url)
+        util.exec('bash', url.split('/')[-1], '-y')
+
 
 def pull(conf):
     webrtc_path = util.getpath(config.PATH_WEBRTC)
@@ -232,6 +240,15 @@ def _generate_args(conf, mode):
 
     if conf['os'] == 'win':
         args.append('is_clang=false')
+
+    if conf['stdlib'] == 'yocto':
+        args.append('custom_toolchain="//build/toolchain/linux/unbundle:default"')
+        args.append('host_toolchain="//build/toolchain/linux/unbundle:default"')
+        args.append('is_clang=false')
+        args.append('use_thin_lto=false')
+        args.append('use_sysroot=false')
+        args.append('treat_warnings_as_errors=false')
+        args.append('libyuv_use_neon=false')
 
     return args
 
@@ -301,7 +318,12 @@ def build(conf, mode):
 
     util.exec('gn', 'gen', out_path)
 
-    util.exec('ninja', '-C', out_path)
+    if conf['stdlib'] == 'yocto':
+        util.exec(config.PATH_ROOT + '/run_with_yocto_env.sh',
+                  '/usr/local/cubbit-x86_64/environment-setup-aarch64-cubbit-linux',
+                  'ninja', '-C', out_path)
+    else:
+        util.exec('ninja', '-C', out_path)
 
 
 def _copy_tree(source_root, source_file, destination):

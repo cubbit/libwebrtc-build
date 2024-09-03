@@ -103,7 +103,7 @@ jobs:
       - name: Download artifacts
         id: download_artifacts
         if: needs.run-checks.outputs.artifact_present == 'false'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: ${{ needs.build-macos-x64.outputs.artifact_name }}
           path: artifacts
